@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import FollowButton from "./FollowButton";
+import MessageButton from "./MessageButton";
 
 type Props = {
   profile: {
@@ -42,11 +43,14 @@ export default function ProfileHeader({ profile, isMe, isFollowing, followers, f
               Modifica profilo
             </Link>
           ) : (
-            <FollowButton
-              targetId={profile.id}
-              targetUsername={profile.username}
-              initialFollowing={isFollowing}
-            />
+            <div className="flex items-start gap-2">
+              <MessageButton targetId={profile.id} />
+              <FollowButton
+                targetId={profile.id}
+                targetUsername={profile.username}
+                initialFollowing={isFollowing}
+              />
+            </div>
           )}
         </div>
 

@@ -1,7 +1,30 @@
-export default function Page() {
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getChat } from "@/lib/queries/messages";
+import ChatWindow from "@/components/messages/ChatWindow";
+
+export const metadata = { title: "Chat" };
+
+type Props = { params: Promise<{ conversationId: string }> };
+
+export default async function ChatPage({ params }: Props) {
+  const { conversationId } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const chat = await getChat(supabase, conversationId, user.id);
+  if (!chat) notFound();
+
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 text-muted">
-      Questa sezione arriva nella prossima fase.
-    </div>
+    <ChatWindow
+      conversationId={conversationId}
+      currentUserId={user.id}
+      other={chat.other}
+      initialMessages={chat.messages}
+    />
   );
 }

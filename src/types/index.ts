@@ -28,4 +28,20 @@ export type CommentWithAuthor = {
   author: AuthorLite;
 };
 
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+export type ConversationPreview = {
+  id: string;
+  other: AuthorLite;
+  last_message: { content: string; sender_id: string; created_at: string } | null;
+  unread: number;
+};
+
 export type ActionResult = { error?: string };
