@@ -14,3 +14,24 @@ export function getContrastColor(hex: string): "#000000" | "#ffffff" {
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance > 0.4 ? "#000000" : "#ffffff";
 }
+
+/** "ora", "5 min fa", "3 h fa" */
+export function timeAgo(iso: string): string {
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "ora";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min fa`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h} h fa` : "1 g fa";
+}
+
+/** Tempo rimanente prima della scadenza di un contenuto. */
+export function timeLeft(iso: string): { label: string; urgent: boolean } {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return { label: "in scadenza", urgent: true };
+  const m = Math.ceil(ms / 60000);
+  if (m < 60) return { label: `${m} min`, urgent: true };
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return { label: rest ? `${h}h ${rest}m` : `${h}h`, urgent: false };
+}

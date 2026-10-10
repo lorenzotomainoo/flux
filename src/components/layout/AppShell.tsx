@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, LogOut, MessageCircle, Search, User } from "lucide-react";
+import { Home, LogOut, MessageCircle, Search, Settings, User } from "lucide-react";
+import Avatar from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type Props = {
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   children: React.ReactNode;
 };
 
-export default function AppShell({ username, displayName, children }: Props) {
+export default function AppShell({ username, displayName, avatarUrl, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,6 +24,7 @@ export default function AppShell({ username, displayName, children }: Props) {
     { href: "/messages", label: "Messaggi", icon: MessageCircle },
     { href: `/${username}`, label: "Profilo", icon: User },
   ];
+  const sidebarItems = [...items, { href: "/settings", label: "Impostazioni", icon: Settings }];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
@@ -44,7 +47,7 @@ export default function AppShell({ username, displayName, children }: Props) {
         <div className="space-y-8">
           {Logo}
           <nav className="space-y-1">
-            {items.map(({ href, label, icon: Icon }) => (
+            {sidebarItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -62,10 +65,16 @@ export default function AppShell({ username, displayName, children }: Props) {
           </nav>
         </div>
         <div className="space-y-2">
-          <div className="px-3 text-sm">
-            <p className="truncate font-semibold">{displayName}</p>
-            <p className="truncate text-muted">@{username}</p>
-          </div>
+          <Link
+            href={`/${username}`}
+            className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-surface-2"
+          >
+            <Avatar src={avatarUrl} name={displayName || username} size={36} />
+            <div className="min-w-0 text-sm">
+              <p className="truncate font-semibold">{displayName || username}</p>
+              <p className="truncate text-muted">@{username}</p>
+            </div>
+          </Link>
           <button
             onClick={signOut}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted transition-colors hover:bg-surface-2 hover:text-fg"
@@ -80,14 +89,17 @@ export default function AppShell({ username, displayName, children }: Props) {
         {/* Top bar mobile */}
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-bg/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
           {Logo}
-          <button onClick={signOut} aria-label="Esci" className="p-2 text-muted">
-            <LogOut size={20} />
-          </button>
+          <div className="flex items-center">
+            <Link href="/settings" aria-label="Impostazioni" className="p-2 text-muted">
+              <Settings size={20} />
+            </Link>
+            <button onClick={signOut} aria-label="Esci" className="p-2 text-muted">
+              <LogOut size={20} />
+            </button>
+          </div>
         </header>
 
-        <main className="mx-auto w-full max-w-xl flex-1 px-4 pb-28 pt-5 md:pb-10">
-          {children}
-        </main>
+        <main className="mx-auto w-full max-w-xl flex-1 px-4 pb-28 pt-5 md:pb-10">{children}</main>
       </div>
 
       {/* Bottom nav mobile */}

@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("username, display_name, theme, accent_color")
+    .select("username, display_name, avatar_url, theme, accent_color")
     .eq("id", user.id)
     .single();
 
@@ -22,11 +22,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (error || !profile) throw new Error("Profilo non trovato");
 
   return (
-    <ThemeProvider
-      initialTheme={profile.theme as Theme}
-      initialAccent={profile.accent_color}
-    >
-      <AppShell username={profile.username} displayName={profile.display_name}>
+    <ThemeProvider initialTheme={profile.theme as Theme} initialAccent={profile.accent_color}>
+      <AppShell
+        username={profile.username}
+        displayName={profile.display_name}
+        avatarUrl={profile.avatar_url}
+      >
         {children}
       </AppShell>
     </ThemeProvider>

@@ -1,12 +1,31 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getFeed } from "@/lib/queries/posts";
+import PostComposer from "@/components/feed/PostComposer";
+import FeedList from "@/components/feed/FeedList";
+
 export const metadata = { title: "Home" };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const [{ data: profile }, feed] = await Promise.all([
+    supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single(),
+    getFeed(supabase, user.id),
+  ]);
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Il tuo feed</h1>
-      <div className="rounded-2xl border border-border bg-surface p-6 text-muted">
-        Qui arriveranno i post di chi segui. Ogni post scompare dopo 24 ore.
-      </div>
+    <div className="space-y-5">
+      <PostComposer
+        userId={user.id}
+        displayName={profile?.display_name ?? ""}
+        avatarUrl={profile?.avatar_url ?? null}
+      />
+      <FeedList initialPosts={feed.posts} hasMoreInitial={feed.hasMore} currentUserId={user.id} />
     </div>
   );
 }

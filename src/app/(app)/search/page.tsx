@@ -1,7 +1,12 @@
-export default function Page() {
+import SearchBar from "@/components/search/SearchBar";
+
+export const metadata = { title: "Cerca" };
+
+export default function SearchPage() {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 text-muted">
-      Questa sezione arriva nella prossima fase.
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Cerca</h1>
+      <SearchBar />
     </div>
   );
 }

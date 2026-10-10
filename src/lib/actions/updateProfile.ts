@@ -1,0 +1,55 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { MAX_BIO_LENGTH, MAX_NAME_LENGTH } from "@/lib/limits";
+import { HEX_RE } from "@/lib/utils";
+import type { ActionResult } from "@/types";
+
+type Input = {
+  display_name: string;
+  bio: string;
+  theme: string;
+  accent_color: string;
+  avatar_url: string | null;
+  banner_url: string | null;
+};
+
+export async function updateProfile(input: Input): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessione scaduta, accedi di nuovo." };
+
+  const name = input.display_name.trim();
+  const bio = input.bio.trim();
+  if (!name || name.length > MAX_NAME_LENGTH) return { error: `Il nome deve avere 1-${MAX_NAME_LENGTH} caratteri.` };
+  if (bio.length > MAX_BIO_LENGTH) return { error: `La bio può avere al massimo ${MAX_BIO_LENGTH} caratteri.` };
+  if (input.theme !== "light" && input.theme !== "dark") return { error: "Tema non valido." };
+  if (!HEX_RE.test(input.accent_color)) return { error: "Colore non valido (usa il formato #RRGGBB)." };
+
+  // le immagini devono stare nei nostri bucket, nella cartella dell'utente
+  const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
+  const okUrl = (url: string | null, bucket: string) =>
+    url === null || url.startsWith(`${storageBase}/${bucket}/${user.id}/`);
+  if (!okUrl(input.avatar_url, "avatars") || !okUrl(input.banner_url, "banners")) {
+    return { error: "Immagine non valida." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: name,
+      bio,
+      theme: input.theme,
+      accent_color: input.accent_color.toLowerCase(),
+      avatar_url: input.avatar_url,
+      banner_url: input.banner_url,
+    })
+    .eq("id", user.id);
+  if (error) return { error: "Non sono riuscito a salvare il profilo. Riprova." };
+
+  revalidatePath("/", "layout");
+  return {};
+}
