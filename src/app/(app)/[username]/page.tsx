@@ -23,7 +23,7 @@ export default async function ProfilePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_url, banner_url, accent_color")
+    .select("id, username, display_name, bio, avatar_url, banner_url, avatar_x, avatar_y, banner_x, banner_y, accent_color")
     .eq("username", username.toLowerCase())
     .maybeSingle();
   if (!profile) notFound();

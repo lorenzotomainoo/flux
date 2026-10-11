@@ -7,7 +7,9 @@ import type { AuthorLite } from "@/types";
 
 type Props = { params: Promise<{ username: string; list: string }> };
 
-const USER_FIELDS = "id, username, display_name, avatar_url";
+import { AUTHOR_FIELDS } from "@/lib/fields";
+
+const USER_FIELDS = AUTHOR_FIELDS;
 
 export default async function FollowListPage({ params }: Props) {
   const { username, list } = await params;

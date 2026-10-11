@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Trash2 } from "lucide-react";
-import Avatar from "@/components/ui/Avatar";
+import { UserAvatar } from "@/components/ui/Avatar";
 import ExpiryBadge from "./ExpiryBadge";
 import MediaGrid from "./MediaGrid";
 import CommentList from "./CommentList";
 import CommentForm from "./CommentForm";
 import { createClient } from "@/lib/supabase/client";
 import { deletePost } from "@/lib/actions/deletePost";
+import { AUTHOR_FIELDS } from "@/lib/fields";
 import { timeAgo } from "@/lib/utils";
 import type { CommentWithAuthor, PostWithAuthor } from "@/types";
 
@@ -34,9 +35,7 @@ export default function PostCard({ post, currentUserId }: Props) {
     if (next && comments === null) {
       const { data } = await createClient()
         .from("comments")
-        .select(
-          "id, content, created_at, author:profiles!comments_author_id_fkey(id, username, display_name, avatar_url)"
-        )
+        .select(`id, content, created_at, author:profiles!comments_author_id_fkey(${AUTHOR_FIELDS})`)
         .eq("post_id", post.id)
         .order("created_at", { ascending: true });
       setComments((data ?? []) as unknown as CommentWithAuthor[]);
@@ -58,7 +57,7 @@ export default function PostCard({ post, currentUserId }: Props) {
     <article className="space-y-3 rounded-2xl border border-border bg-surface p-4">
       <header className="flex items-start gap-3">
         <Link href={`/${author.username}`}>
-          <Avatar src={author.avatar_url} name={author.display_name || author.username} size={42} />
+          <UserAvatar user={author} size={42} />
         </Link>
         <div className="min-w-0 flex-1">
           <Link href={`/${author.username}`} className="block truncate font-semibold hover:underline">

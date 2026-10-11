@@ -12,6 +12,10 @@ type Props = {
     bio: string;
     avatar_url: string | null;
     banner_url: string | null;
+    avatar_x: number;
+    avatar_y: number;
+    banner_x: number;
+    banner_y: number;
   };
   isMe: boolean;
   isFollowing: boolean;
@@ -24,26 +28,37 @@ export default function ProfileHeader({ profile, isMe, isFollowing, followers, f
 
   return (
     <section className="overflow-hidden rounded-3xl border border-border bg-surface">
-      <div className="h-32 w-full bg-gradient-to-br from-accent/70 to-accent/10 sm:h-44">
+      <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-accent/70 to-accent/10 sm:h-44">
         {profile.banner_url && (
-          <img src={profile.banner_url} alt="" className="h-full w-full object-cover" />
+          <img
+            src={profile.banner_url}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: `${profile.banner_x}% ${profile.banner_y}%` }}
+          />
         )}
       </div>
 
       <div className="px-5 pb-5">
-        <div className="-mt-12 flex items-end justify-between">
-          <div className="rounded-full border-4 border-surface bg-surface">
-            <Avatar src={profile.avatar_url} name={name} size={96} />
+        <div className="relative z-10 -mt-12 flex items-end justify-between gap-3">
+          <div className="shrink-0 rounded-full border-4 border-surface bg-surface">
+            <Avatar
+              src={profile.avatar_url}
+              name={name}
+              size={96}
+              x={profile.avatar_x}
+              y={profile.avatar_y}
+            />
           </div>
           {isMe ? (
             <Link
               href="/settings"
-              className="rounded-xl border border-border bg-surface-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-border/40"
+              className="whitespace-nowrap rounded-xl border border-border bg-surface-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-border/40"
             >
               Modifica profilo
             </Link>
           ) : (
-            <div className="flex items-start gap-2">
+            <div className="flex shrink-0 items-start gap-2">
               <MessageButton targetId={profile.id} />
               <FollowButton
                 targetId={profile.id}

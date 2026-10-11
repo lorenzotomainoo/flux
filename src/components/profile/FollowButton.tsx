@@ -20,8 +20,13 @@ export default function FollowButton({ targetId, targetUsername, initialFollowin
   }
 
   return (
-    <Button variant={following ? "secondary" : "primary"} onClick={toggle} disabled={pending}>
-      {following ? "Stai seguendo" : "Segui"}
+    <Button
+      variant={following ? "secondary" : "primary"}
+      onClick={toggle}
+      disabled={pending}
+      className="px-4"
+    >
+      {following ? "Seguito" : "Segui"}
     </Button>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AccentPicker from "./AccentPicker";
 import ThemePicker from "./ThemePicker";
-import ImageUploader, { type ImageChange } from "./ImageUploader";
+import ImageUploader, { type FocusPoint, type ImageChange } from "./ImageUploader";
 import Button from "@/components/ui/Button";
 import { useTheme } from "@/context/ThemeContext";
 import { updateProfile } from "@/lib/actions/updateProfile";
@@ -20,6 +20,10 @@ type Props = {
     bio: string;
     avatar_url: string | null;
     banner_url: string | null;
+    avatar_x: number;
+    avatar_y: number;
+    banner_x: number;
+    banner_y: number;
     theme: Theme;
     accent_color: string;
   };
@@ -38,6 +42,8 @@ export default function EditProfileForm({ userId, initial }: Props) {
   const [bio, setBio] = useState(initial.bio);
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url);
   const [bannerUrl, setBannerUrl] = useState(initial.banner_url);
+  const [avatarPos, setAvatarPos] = useState<FocusPoint>({ x: initial.avatar_x, y: initial.avatar_y });
+  const [bannerPos, setBannerPos] = useState<FocusPoint>({ x: initial.banner_x, y: initial.banner_y });
   const [avatar, setAvatar] = useState<ImageChange>(NO_CHANGE);
   const [banner, setBanner] = useState<ImageChange>(NO_CHANGE);
   const [version, setVersion] = useState(0);
@@ -95,6 +101,10 @@ export default function EditProfileForm({ userId, initial }: Props) {
         accent_color: accent,
         avatar_url: nextAvatar,
         banner_url: nextBanner,
+        avatar_x: avatarPos.x,
+        avatar_y: avatarPos.y,
+        banner_x: bannerPos.x,
+        banner_y: bannerPos.y,
       });
       if (res.error) throw new Error(res.error);
 
@@ -130,6 +140,8 @@ export default function EditProfileForm({ userId, initial }: Props) {
           shape="banner"
           currentUrl={bannerUrl}
           maxDim={1600}
+          position={bannerPos}
+          onPositionChange={setBannerPos}
           onChange={setBanner}
         />
         <ImageUploader
@@ -138,6 +150,8 @@ export default function EditProfileForm({ userId, initial }: Props) {
           shape="avatar"
           currentUrl={avatarUrl}
           maxDim={512}
+          position={avatarPos}
+          onPositionChange={setAvatarPos}
           onChange={setAvatar}
         />
       </section>

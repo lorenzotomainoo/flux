@@ -21,9 +21,9 @@ export default async function ChatPage({ params }: Props) {
 
   return (
     <ChatWindow
-      conversationId={conversationId}
+      chat={chat.info}
       currentUserId={user.id}
-      other={chat.other}
+      members={chat.members}
       initialMessages={chat.messages}
     />
   );

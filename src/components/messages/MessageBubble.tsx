@@ -1,9 +1,15 @@
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types";
 
-type Props = { message: Message; mine: boolean; seen: boolean };
+type Props = {
+  message: Message;
+  mine: boolean;
+  seen: boolean;
+  /** nome del mittente, mostrato nei gruppi sopra i messaggi altrui */
+  senderName?: string;
+};
 
-export default function MessageBubble({ message, mine, seen }: Props) {
+export default function MessageBubble({ message, mine, seen, senderName }: Props) {
   const time = new Date(message.created_at).toLocaleTimeString("it-IT", {
     hour: "2-digit",
     minute: "2-digit",
@@ -11,6 +17,7 @@ export default function MessageBubble({ message, mine, seen }: Props) {
 
   return (
     <div className={cn("flex flex-col", mine ? "items-end" : "items-start")}>
+      {senderName && <span className="mb-0.5 px-1 text-[11px] font-semibold text-accent">{senderName}</span>}
       <div
         className={cn(
           "max-w-[80%] rounded-2xl px-3.5 py-2",

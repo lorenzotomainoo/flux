@@ -14,7 +14,7 @@ export default async function HomePage() {
   if (!user) redirect("/login");
 
   const [{ data: profile }, feed] = await Promise.all([
-    supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, avatar_url, avatar_x, avatar_y").eq("id", user.id).single(),
     getFeed(supabase, user.id),
   ]);
 
@@ -24,6 +24,8 @@ export default async function HomePage() {
         userId={user.id}
         displayName={profile?.display_name ?? ""}
         avatarUrl={profile?.avatar_url ?? null}
+        avatarX={profile?.avatar_x}
+        avatarY={profile?.avatar_y}
       />
       <FeedList initialPosts={feed.posts} hasMoreInitial={feed.hasMore} currentUserId={user.id} />
     </div>

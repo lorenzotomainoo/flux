@@ -16,10 +16,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [{ data: profile, error }, unread] = await Promise.all([
     supabase
       .from("profiles")
-      .select("username, display_name, avatar_url, theme, accent_color")
+      .select("username, display_name, avatar_url, avatar_x, avatar_y, theme, accent_color")
       .eq("id", user.id)
       .single(),
-    getUnreadCount(supabase, user.id),
+    getUnreadCount(supabase),
   ]);
 
   // Non fare redirect a /login qui: il middleware ti rimanderebbe a /home (loop).
@@ -32,6 +32,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         username={profile.username}
         displayName={profile.display_name}
         avatarUrl={profile.avatar_url}
+        avatarX={profile.avatar_x}
+        avatarY={profile.avatar_y}
         unread={unread}
       >
         {children}

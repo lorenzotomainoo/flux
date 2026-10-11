@@ -13,6 +13,10 @@ type Input = {
   accent_color: string;
   avatar_url: string | null;
   banner_url: string | null;
+  avatar_x: number;
+  avatar_y: number;
+  banner_x: number;
+  banner_y: number;
 };
 
 export async function updateProfile(input: Input): Promise<ActionResult> {
@@ -28,6 +32,11 @@ export async function updateProfile(input: Input): Promise<ActionResult> {
   if (bio.length > MAX_BIO_LENGTH) return { error: `La bio può avere al massimo ${MAX_BIO_LENGTH} caratteri.` };
   if (input.theme !== "light" && input.theme !== "dark") return { error: "Tema non valido." };
   if (!HEX_RE.test(input.accent_color)) return { error: "Colore non valido (usa il formato #RRGGBB)." };
+
+  const focus = [input.avatar_x, input.avatar_y, input.banner_x, input.banner_y];
+  if (!focus.every((n) => Number.isInteger(n) && n >= 0 && n <= 100)) {
+    return { error: "Inquadratura non valida." };
+  }
 
   // le immagini devono stare nei nostri bucket, nella cartella dell'utente
   const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
@@ -46,6 +55,10 @@ export async function updateProfile(input: Input): Promise<ActionResult> {
       accent_color: input.accent_color.toLowerCase(),
       avatar_url: input.avatar_url,
       banner_url: input.banner_url,
+      avatar_x: input.avatar_x,
+      avatar_y: input.avatar_y,
+      banner_x: input.banner_x,
+      banner_y: input.banner_y,
     })
     .eq("id", user.id);
   if (error) return { error: "Non sono riuscito a salvare il profilo. Riprova." };

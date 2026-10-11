@@ -1,9 +1,18 @@
 /* eslint-disable @next/next/no-img-element */
 import { cn } from "@/lib/utils";
+import type { AuthorLite } from "@/types";
 
-type Props = { src: string | null; name: string; size?: number; className?: string };
+type Props = {
+  src: string | null;
+  name: string;
+  size?: number;
+  /** punto focale 0-100 (50 = centro) */
+  x?: number;
+  y?: number;
+  className?: string;
+};
 
-export default function Avatar({ src, name, size = 40, className }: Props) {
+export default function Avatar({ src, name, size = 40, x = 50, y = 50, className }: Props) {
   const initial = (name.trim()[0] ?? "?").toUpperCase();
   const style = { width: size, height: size };
 
@@ -15,7 +24,7 @@ export default function Avatar({ src, name, size = 40, className }: Props) {
         width={size}
         height={size}
         loading="lazy"
-        style={style}
+        style={{ ...style, objectPosition: `${x}% ${y}%` }}
         className={cn("shrink-0 rounded-full bg-surface-2 object-cover", className)}
       />
     );
@@ -28,5 +37,19 @@ export default function Avatar({ src, name, size = 40, className }: Props) {
     >
       {initial}
     </div>
+  );
+}
+
+/** Avatar a partire da un profilo: applica da solo il punto focale scelto. */
+export function UserAvatar({ user, size, className }: { user: AuthorLite; size?: number; className?: string }) {
+  return (
+    <Avatar
+      src={user.avatar_url}
+      name={user.display_name || user.username}
+      x={user.avatar_x}
+      y={user.avatar_y}
+      size={size}
+      className={className}
+    />
   );
 }

@@ -9,6 +9,9 @@ export type AuthorLite = {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  /** punto focale dell'avatar, 0-100 (50 = centro) */
+  avatar_x?: number;
+  avatar_y?: number;
 };
 
 export type PostWithAuthor = {
@@ -34,14 +37,34 @@ export type Message = {
   sender_id: string;
   content: string;
   created_at: string;
-  read_at: string | null;
 };
+
+export type ConversationKind = "direct" | "group";
 
 export type ConversationPreview = {
   id: string;
-  other: AuthorLite;
+  kind: ConversationKind;
+  name: string | null;
+  /** null = permanente; altrimenti la chat si autodistrugge a questa data */
+  expires_at: string | null;
+  /** l'altra persona (solo chat 1-a-1) */
+  other: AuthorLite | null;
+  member_count: number;
+  is_admin: boolean;
   last_message: { content: string; sender_id: string; created_at: string } | null;
   unread: number;
+};
+
+export type ChatInfo = {
+  id: string;
+  kind: ConversationKind;
+  name: string | null;
+  expires_at: string | null;
+};
+
+export type ChatMember = AuthorLite & {
+  role: "admin" | "member";
+  last_read_at: string;
 };
 
 export type ActionResult = { error?: string };

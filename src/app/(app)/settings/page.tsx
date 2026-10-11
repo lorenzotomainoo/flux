@@ -14,7 +14,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, bio, avatar_url, banner_url, theme, accent_color")
+    .select("display_name, bio, avatar_url, banner_url, avatar_x, avatar_y, banner_x, banner_y, theme, accent_color")
     .eq("id", user.id)
     .single();
   if (!profile) throw new Error("Profilo non trovato");
@@ -29,6 +29,10 @@ export default async function SettingsPage() {
           bio: profile.bio,
           avatar_url: profile.avatar_url,
           banner_url: profile.banner_url,
+          avatar_x: profile.avatar_x,
+          avatar_y: profile.avatar_y,
+          banner_x: profile.banner_x,
+          banner_y: profile.banner_y,
           theme: profile.theme as Theme,
           accent_color: profile.accent_color,
         }}

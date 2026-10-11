@@ -13,11 +13,13 @@ type Props = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  avatarX?: number;
+  avatarY?: number;
   unread: number;
   children: React.ReactNode;
 };
 
-export default function AppShell({ userId, username, displayName, avatarUrl, unread, children }: Props) {
+export default function AppShell({ userId, username, displayName, avatarUrl, avatarX, avatarY, unread, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -47,7 +49,17 @@ export default function AppShell({ userId, username, displayName, avatarUrl, unr
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         if (payload.new.sender_id !== userId) refresh();
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, refresh)
+      // io ho letto una chat, oppure qualcuno mi ha aggiunto a una chat o a un gruppo
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${userId}` },
+        refresh
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "conversation_members", filter: `user_id=eq.${userId}` },
+        refresh
+      )
       .subscribe();
 
     return () => {
@@ -105,7 +117,7 @@ export default function AppShell({ userId, username, displayName, avatarUrl, unr
             href={`/${username}`}
             className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-surface-2"
           >
-            <Avatar src={avatarUrl} name={displayName || username} size={36} />
+            <Avatar src={avatarUrl} name={displayName || username} size={36} x={avatarX} y={avatarY} />
             <div className="min-w-0 text-sm">
               <p className="truncate font-semibold">{displayName || username}</p>
               <p className="truncate text-muted">@{username}</p>

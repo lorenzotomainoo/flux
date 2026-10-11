@@ -27,9 +27,16 @@ export default function MessageButton({ targetId }: { targetId: string }) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button variant="secondary" onClick={open} disabled={busy}>
-        <MessageCircle size={16} />
-        {busy ? "Apro…" : "Scrivi"}
+      {/* su telefono solo icona: lascia spazio al pulsante Segui */}
+      <Button
+        variant="secondary"
+        onClick={open}
+        disabled={busy}
+        aria-label="Scrivi un messaggio"
+        className="px-3 sm:px-4"
+      >
+        <MessageCircle size={18} />
+        <span className="hidden sm:inline">{busy ? "Apro…" : "Scrivi"}</span>
       </Button>
       {error && <span className="text-xs text-red-500">Chat non disponibile</span>}
     </div>

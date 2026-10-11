@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { AUTHOR_FIELDS } from "@/lib/fields";
 import { MAX_COMMENT_LENGTH } from "@/lib/limits";
 import type { CommentWithAuthor } from "@/types";
 
@@ -21,9 +22,7 @@ export async function addComment(
   const { data, error } = await supabase
     .from("comments")
     .insert({ post_id: postId, author_id: user.id, content: text })
-    .select(
-      "id, content, created_at, author:profiles!comments_author_id_fkey(id, username, display_name, avatar_url)"
-    )
+    .select(`id, content, created_at, author:profiles!comments_author_id_fkey(${AUTHOR_FIELDS})`)
     .single();
 
   if (error || !data) return { error: "Il post potrebbe essere scaduto. Riprova." };

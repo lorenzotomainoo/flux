@@ -11,10 +11,16 @@ import { MAX_IMAGES_PER_POST, MAX_POST_LENGTH } from "@/lib/limits";
 import { ACCEPT_ATTR, prepareImage } from "@/lib/media";
 import { removeImages, uploadImage } from "@/lib/upload";
 
-type Props = { userId: string; displayName: string; avatarUrl: string | null };
+type Props = {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  avatarX?: number;
+  avatarY?: number;
+};
 type Attachment = { file: File; url: string };
 
-export default function PostComposer({ userId, displayName, avatarUrl }: Props) {
+export default function PostComposer({ userId, displayName, avatarUrl, avatarX, avatarY }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
@@ -89,7 +95,7 @@ export default function PostComposer({ userId, displayName, avatarUrl }: Props) 
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
       <div className="flex gap-3">
-        <Avatar src={avatarUrl} name={displayName} size={42} />
+        <Avatar src={avatarUrl} name={displayName} size={42} x={avatarX} y={avatarY} />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

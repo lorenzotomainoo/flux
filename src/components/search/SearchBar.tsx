@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import UserResult from "./UserResult";
 import { useDebounce } from "@/hooks/useDebounce";
+import { AUTHOR_FIELDS } from "@/lib/fields";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthorLite } from "@/types";
 
@@ -24,7 +25,7 @@ export default function SearchBar() {
     setLoading(true);
     createClient()
       .from("profiles")
-      .select("id, username, display_name, avatar_url")
+      .select(AUTHOR_FIELDS)
       .like("username", `${q}%`)
       .order("username")
       .limit(20)
