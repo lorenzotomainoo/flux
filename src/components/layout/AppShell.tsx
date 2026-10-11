@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, LogOut, MessageCircle, Search, Settings, User } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
+import Footer from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -150,11 +151,15 @@ export default function AppShell({ userId, username, displayName, avatarUrl, ava
         <main
           className={cn(
             "mx-auto w-full max-w-xl flex-1 px-4 pt-5 md:pb-10",
-            inChat ? "pb-[calc(1rem+env(safe-area-inset-bottom))]" : "pb-28"
+            inChat ? "pb-[calc(1rem+env(safe-area-inset-bottom))]" : "pb-6"
           )}
         >
           {children}
         </main>
+
+        {/* nelle chat la schermata è a tutta altezza: il footer sta solo nelle altre pagine.
+            Su telefono lascia lo spazio alla barra di navigazione fissa in basso. */}
+        {!inChat && <Footer className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-6" />}
       </div>
 
       {/* Bottom nav mobile */}
