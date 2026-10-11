@@ -5,26 +5,79 @@
 :root {
   --accent: #7c5cff;
   --accent-fg: #ffffff;
+  /* quanto "accento" viene mescolato nei colori di base (vedi data-tint) */
+  --tint-bg: 0%;
+  --tint-surface: 0%;
+  --tint-surface-2: 0%;
+  --tint-border: 0%;
 }
 
+/* Colori di base dei due temi */
 [data-theme="dark"] {
-  --bg: #0a0a0f;
-  --surface: #13131b;
-  --surface-2: #1b1b26;
+  --bg-base: #0a0a0f;
+  --surface-base: #13131b;
+  --surface-2-base: #1b1b26;
+  --border-base: #24243a;
   --fg: #f5f5fa;
   --muted: #8c8ca1;
-  --border: #24243a;
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --bg: #fafafc;
-  --surface: #ffffff;
-  --surface-2: #f1f1f6;
+  --bg-base: #fafafc;
+  --surface-base: #ffffff;
+  --surface-2-base: #f1f1f6;
+  --border-base: #e4e4ee;
   --fg: #14141c;
   --muted: #6b6b80;
-  --border: #e4e4ee;
   color-scheme: light;
+}
+
+/* Colori effettivi. Ripiego sicuro: i colori di base (browser senza color-mix) */
+[data-theme] {
+  --bg: var(--bg-base);
+  --surface: var(--surface-base);
+  --surface-2: var(--surface-2-base);
+  --border: var(--border-base);
+}
+
+/* Con color-mix: base + una punta di accento (tinta) */
+@supports (color: color-mix(in oklab, red, red)) {
+  [data-theme] {
+    --bg: color-mix(in oklab, var(--accent) var(--tint-bg), var(--bg-base));
+    --surface: color-mix(in oklab, var(--accent) var(--tint-surface), var(--surface-base));
+    --surface-2: color-mix(in oklab, var(--accent) var(--tint-surface-2), var(--surface-2-base));
+    --border: color-mix(in oklab, var(--accent) var(--tint-border), var(--border-base));
+  }
+}
+
+[data-tint="1"] { --tint-bg: 3%;  --tint-surface: 4%;  --tint-surface-2: 6%;  --tint-border: 9%; }
+[data-tint="2"] { --tint-bg: 6%;  --tint-surface: 8%;  --tint-surface-2: 11%; --tint-border: 15%; }
+[data-tint="3"] { --tint-bg: 11%; --tint-surface: 14%; --tint-surface-2: 18%; --tint-border: 24%; }
+
+/* Angoli: ridefiniscono i raggi di Tailwind (rounded-lg, -xl, -2xl, -3xl). "medium" usa i valori standard. */
+[data-radius="sharp"] { --radius-md: 0.125rem; --radius-lg: 0.1875rem; --radius-xl: 0.25rem; --radius-2xl: 0.3125rem; --radius-3xl: 0.5rem; }
+[data-radius="soft"]  { --radius-lg: 0.625rem;  --radius-xl: 1rem;     --radius-2xl: 1.375rem;  --radius-3xl: 1.875rem; }
+[data-radius="round"] { --radius-lg: 0.875rem;  --radius-xl: 1.375rem; --radius-2xl: 2rem;      --radius-3xl: 2.5rem; }
+
+/* Sfondi */
+[data-bg="glow"] {
+  background-image: radial-gradient(
+    60rem 28rem at 50% -8rem,
+    color-mix(in oklab, var(--accent) 22%, transparent),
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+[data-bg="dots"] {
+  background-image: radial-gradient(color-mix(in oklab, var(--fg) 16%, transparent) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+[data-bg="grid"] {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--fg) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--fg) 7%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 @theme inline {
@@ -44,6 +97,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Animazioni ridotte: dal sistema operativo oppure dalla scelta in Impostazioni → Aspetto */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -51,4 +105,12 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AccentPicker from "./AccentPicker";
-import ThemePicker from "./ThemePicker";
 import ImageUploader, { type FocusPoint, type ImageChange } from "./ImageUploader";
 import Button from "@/components/ui/Button";
-import { useTheme } from "@/context/ThemeContext";
 import { updateProfile } from "@/lib/actions/updateProfile";
 import { MAX_BIO_LENGTH, MAX_NAME_LENGTH } from "@/lib/limits";
 import { pathFromPublicUrl, publicUrl, type Bucket } from "@/lib/storage";
 import { removeImages, uploadImage } from "@/lib/upload";
-import type { Theme } from "@/types";
 
 type Props = {
   userId: string;
@@ -24,8 +20,6 @@ type Props = {
     avatar_y: number;
     banner_x: number;
     banner_y: number;
-    theme: Theme;
-    accent_color: string;
   };
 };
 
@@ -36,7 +30,6 @@ const NO_CHANGE: ImageChange = { file: null, removed: false };
 
 export default function EditProfileForm({ userId, initial }: Props) {
   const router = useRouter();
-  const { theme, accent, setTheme, setAccent } = useTheme();
 
   const [displayName, setDisplayName] = useState(initial.display_name);
   const [bio, setBio] = useState(initial.bio);
@@ -50,16 +43,6 @@ export default function EditProfileForm({ userId, initial }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-
-  // Ultimo tema/accento salvato: se esci senza salvare, l'anteprima live viene annullata
-  const baseline = useRef({ theme: initial.theme, accent: initial.accent_color });
-  useEffect(() => {
-    return () => {
-      setTheme(baseline.current.theme);
-      setAccent(baseline.current.accent);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -97,8 +80,6 @@ export default function EditProfileForm({ userId, initial }: Props) {
       const res = await updateProfile({
         display_name: name,
         bio,
-        theme,
-        accent_color: accent,
         avatar_url: nextAvatar,
         banner_url: nextBanner,
         avatar_x: avatarPos.x,
@@ -114,7 +95,6 @@ export default function EditProfileForm({ userId, initial }: Props) {
       if (oldAvatar) await removeImages("avatars", [oldAvatar]);
       if (oldBanner) await removeImages("banners", [oldBanner]);
 
-      baseline.current = { theme, accent };
       setAvatarUrl(nextAvatar);
       setBannerUrl(nextBanner);
       setAvatar(NO_CHANGE);
@@ -182,13 +162,6 @@ export default function EditProfileForm({ userId, initial }: Props) {
             maxLength={MAX_BIO_LENGTH}
           />
         </div>
-      </section>
-
-      <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
-        <h2 className="font-bold">Aspetto</h2>
-        <p className="text-sm text-muted">L&apos;anteprima è immediata: salva per renderla definitiva.</p>
-        <ThemePicker />
-        <AccentPicker />
       </section>
 
       {error && <p className="text-sm text-red-500">{error}</p>}

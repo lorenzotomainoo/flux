@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUnreadCount } from "@/lib/queries/messages";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AppShell from "@/components/layout/AppShell";
-import type { Theme } from "@/types";
+import { appearanceFromProfile } from "@/lib/appearance";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,7 +16,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [{ data: profile, error }, unread] = await Promise.all([
     supabase
       .from("profiles")
-      .select("username, display_name, avatar_url, avatar_x, avatar_y, theme, accent_color")
+      .select(
+        "username, display_name, avatar_url, avatar_x, avatar_y, theme, accent_color, ui_font, ui_radius, ui_text_size, ui_background, ui_tint, ui_reduce_motion"
+      )
       .eq("id", user.id)
       .single(),
     getUnreadCount(supabase),
@@ -26,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (error || !profile) throw new Error("Profilo non trovato");
 
   return (
-    <ThemeProvider initialTheme={profile.theme as Theme} initialAccent={profile.accent_color}>
+    <ThemeProvider initial={appearanceFromProfile(profile)}>
       <AppShell
         userId={user.id}
         username={profile.username}

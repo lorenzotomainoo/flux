@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono, Lora, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const font = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap" });
+// Il font predefinito è precaricato; gli altri si scaricano solo se l'utente li sceglie (preload: false).
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap", variable: "--font-jakarta" });
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter", preload: false });
+const grotesk = Space_Grotesk({ subsets: ["latin"], display: "swap", variable: "--font-grotesk", preload: false });
+const serif = Lora({ subsets: ["latin"], display: "swap", variable: "--font-serif", preload: false });
+const mono = JetBrains_Mono({ subsets: ["latin"], display: "swap", variable: "--font-mono", preload: false });
 
 export const metadata: Metadata = {
   title: { default: "Flux", template: "%s · Flux" },
@@ -15,9 +20,10 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const fontVars = [jakarta, inter, grotesk, serif, mono].map((f) => f.variable).join(" ");
   return (
     <html lang="it" data-theme="dark" suppressHydrationWarning>
-      <body className={font.className} suppressHydrationWarning>
+      <body className={`${jakarta.className} ${fontVars}`} suppressHydrationWarning>
         {children}
       </body>
     </html>
