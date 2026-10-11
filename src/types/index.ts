@@ -4,6 +4,9 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Post = Database["public"]["Tables"]["posts"]["Row"];
 export type Theme = "light" | "dark";
 
+/** Quale feed mostrare: solo chi segui (e te stesso) oppure i post di tutti. */
+export type FeedScope = "seguiti" | "mondiale";
+
 export type AuthorLite = {
   id: string;
   username: string;
