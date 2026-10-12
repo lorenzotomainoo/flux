@@ -13,14 +13,16 @@ export async function deletePost(postId: string): Promise<ActionResult> {
 
   const { data: post } = await supabase
     .from("posts")
-    .select("media_paths")
+    .select("media_paths, audio_path")
     .eq("id", postId)
     .eq("author_id", user.id)
     .maybeSingle();
   if (!post) return { error: "Post non trovato." };
 
+  // cancella anche i file: foto e audio
   const paths = (post.media_paths ?? []) as string[];
   if (paths.length > 0) await supabase.storage.from("post-media").remove(paths);
+  if (post.audio_path) await supabase.storage.from("post-audio").remove([post.audio_path]);
 
   const { error } = await supabase.from("posts").delete().eq("id", postId).eq("author_id", user.id);
   if (error) return { error: "Non sono riuscito a eliminare il post." };

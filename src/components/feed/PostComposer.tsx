@@ -3,13 +3,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Mic, Music, X } from "lucide-react";
+import AudioPanel from "./AudioPanel";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
+import { useAudioDraft } from "@/hooks/useAudioDraft";
 import { createPost } from "@/lib/actions/createPost";
+import { AUDIO_ACCEPT } from "@/lib/audio";
 import { MAX_IMAGES_PER_POST, MAX_POST_LENGTH } from "@/lib/limits";
 import { ACCEPT_ATTR, prepareImage } from "@/lib/media";
-import { removeImages, uploadImage } from "@/lib/upload";
+import { removeImages, uploadAudio, uploadImage } from "@/lib/upload";
 
 type Props = {
   userId: string;
@@ -23,6 +26,8 @@ type Attachment = { file: File; url: string };
 export default function PostComposer({ userId, displayName, avatarUrl, avatarX, avatarY }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const audio = useAudioDraft();
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<Attachment[]>([]);
   const [preparing, setPreparing] = useState(false);
@@ -66,24 +71,47 @@ export default function PostComposer({ userId, displayName, avatarUrl, avatarX, 
     });
   }
 
-  const canPost = (content.trim().length > 0 || files.length > 0) && !posting && !preparing;
+  const audioBusy = audio.recording || audio.busy;
+  const audioLocked = audio.draft !== null || audioBusy || posting;
+  const canPost =
+    (content.trim().length > 0 || files.length > 0 || audio.draft !== null) &&
+    !posting &&
+    !preparing &&
+    !audioBusy;
+
+  function onPickAudio(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) void audio.pickFile(file);
+  }
 
   async function submit() {
     if (!canPost) return;
     setPosting(true);
     setError(null);
     const uploaded: string[] = [];
+    let uploadedAudio: string | null = null;
     try {
       for (const { file } of files) uploaded.push(await uploadImage("post-media", userId, file));
-      const res = await createPost(content, uploaded);
+
+      let audioPayload: { path: string; duration: number; peaks: number[] } | null = null;
+      if (audio.draft) {
+        uploadedAudio = await uploadAudio(userId, audio.draft.blob, audio.draft.mime);
+        audioPayload = { path: uploadedAudio, duration: audio.draft.duration, peaks: audio.draft.peaks };
+      }
+
+      const res = await createPost(content, uploaded, audioPayload);
       if (res.error) throw new Error(res.error);
 
       files.forEach((f) => URL.revokeObjectURL(f.url));
       setFiles([]);
       setContent("");
+      audio.clear();
       router.refresh();
     } catch (err) {
-      await removeImages("post-media", uploaded); // niente file orfani se il post non è stato creato
+      // niente file orfani se il post non è stato creato
+      await removeImages("post-media", uploaded);
+      if (uploadedAudio) await removeImages("post-audio", [uploadedAudio]);
       setError(err instanceof Error ? err.message : "Qualcosa è andato storto.");
     } finally {
       setPosting(false);
@@ -123,7 +151,17 @@ export default function PostComposer({ userId, displayName, avatarUrl, avatarX, 
         </div>
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      <AudioPanel
+        recording={audio.recording}
+        seconds={audio.seconds}
+        busy={audio.busy}
+        draft={audio.draft}
+        onStop={audio.stopRecording}
+        onCancel={audio.cancelRecording}
+        onRemove={audio.clear}
+      />
+
+      {(error ?? audio.error) && <p className="text-sm text-red-500">{error ?? audio.error}</p>}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -138,6 +176,25 @@ export default function PostComposer({ userId, displayName, avatarUrl, avatarX, 
             <span className="text-muted">
               {preparing ? "Preparo…" : `${files.length}/${MAX_IMAGES_PER_POST}`}
             </span>
+          </button>
+          {audio.canRecord && (
+            <button
+              onClick={() => void audio.startRecording()}
+              disabled={audioLocked}
+              aria-label="Registra un audio"
+              className="rounded-lg p-1.5 text-accent transition hover:bg-accent/10 disabled:opacity-40"
+            >
+              <Mic size={20} />
+            </button>
+          )}
+          <input ref={audioInputRef} type="file" accept={AUDIO_ACCEPT} hidden onChange={onPickAudio} />
+          <button
+            onClick={() => audioInputRef.current?.click()}
+            disabled={audioLocked}
+            aria-label="Carica un file audio"
+            className="rounded-lg p-1.5 text-accent transition hover:bg-accent/10 disabled:opacity-40"
+          >
+            <Music size={20} />
           </button>
           <span className={remaining < 40 ? "text-sm text-orange-500" : "text-sm text-muted"}>{remaining}</span>
         </div>

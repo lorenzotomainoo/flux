@@ -258,6 +258,9 @@ export type Database = {
       }
       posts: {
         Row: {
+          audio_duration: number | null
+          audio_path: string | null
+          audio_peaks: number[] | null
           author_id: string
           content: string
           created_at: string
@@ -266,6 +269,9 @@ export type Database = {
           media_paths: string[]
         }
         Insert: {
+          audio_duration?: number | null
+          audio_path?: string | null
+          audio_peaks?: number[] | null
           author_id: string
           content?: string
           created_at?: string
@@ -274,6 +280,9 @@ export type Database = {
           media_paths?: string[]
         }
         Update: {
+          audio_duration?: number | null
+          audio_path?: string | null
+          audio_peaks?: number[] | null
           author_id?: string
           content?: string
           created_at?: string

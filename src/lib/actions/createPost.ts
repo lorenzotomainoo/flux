@@ -2,10 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { MAX_IMAGES_PER_POST, MAX_POST_LENGTH } from "@/lib/limits";
+import { MAX_AUDIO_SECONDS, MAX_IMAGES_PER_POST, MAX_POST_LENGTH } from "@/lib/limits";
 import type { ActionResult } from "@/types";
 
-export async function createPost(content: string, mediaPaths: string[]): Promise<ActionResult> {
+type AudioInput = { path: string; duration: number; peaks: number[] };
+
+export async function createPost(
+  content: string,
+  mediaPaths: string[],
+  audio: AudioInput | null = null
+): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,11 +27,32 @@ export async function createPost(content: string, mediaPaths: string[]): Promise
   if (!mediaPaths.every((p) => p.startsWith(`${user.id}/`) && !p.includes(".."))) {
     return { error: "File non valido." };
   }
-  if (!text && mediaPaths.length === 0) return { error: "Scrivi qualcosa o aggiungi una foto." };
+
+  // audio: percorso nella cartella dell'utente, durata plausibile e forma d'onda ben formata
+  let audioColumns: { audio_path: string; audio_duration: number; audio_peaks: number[] } | null = null;
+  if (audio) {
+    const duration = Math.round(audio.duration);
+    const validPeaks =
+      Array.isArray(audio.peaks) &&
+      audio.peaks.length >= 8 &&
+      audio.peaks.length <= 128 &&
+      audio.peaks.every((n) => Number.isInteger(n) && n >= 0 && n <= 100);
+
+    if (!audio.path.startsWith(`${user.id}/`) || audio.path.includes("..")) return { error: "File audio non valido." };
+    if (!Number.isFinite(duration) || duration < 1 || duration > MAX_AUDIO_SECONDS + 10) {
+      return { error: "Durata dell'audio non valida." };
+    }
+    if (!validPeaks) return { error: "Audio non valido." };
+    audioColumns = { audio_path: audio.path, audio_duration: duration, audio_peaks: audio.peaks };
+  }
+
+  if (!text && mediaPaths.length === 0 && !audioColumns) {
+    return { error: "Scrivi qualcosa, aggiungi una foto o un audio." };
+  }
 
   const { error } = await supabase
     .from("posts")
-    .insert({ author_id: user.id, content: text, media_paths: mediaPaths });
+    .insert({ author_id: user.id, content: text, media_paths: mediaPaths, ...audioColumns });
   if (error) return { error: "Non sono riuscito a pubblicare il post. Riprova." };
 
   revalidatePath("/home");

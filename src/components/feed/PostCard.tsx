@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { MessageCircle, Trash2 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/Avatar";
 import ExpiryBadge from "./ExpiryBadge";
+import AudioPlayer from "./AudioPlayer";
 import MediaGrid from "./MediaGrid";
 import CommentList from "./CommentList";
 import CommentForm from "./CommentForm";
 import { createClient } from "@/lib/supabase/client";
 import { deletePost } from "@/lib/actions/deletePost";
 import { AUTHOR_FIELDS } from "@/lib/fields";
+import { publicUrl } from "@/lib/storage";
 import { timeAgo } from "@/lib/utils";
 import type { CommentWithAuthor, PostWithAuthor } from "@/types";
 
@@ -81,6 +83,13 @@ export default function PostCard({ post, currentUserId }: Props) {
       </header>
 
       {post.content && <p className="whitespace-pre-wrap break-words">{post.content}</p>}
+      {post.audio_path && post.audio_duration && (
+        <AudioPlayer
+          src={publicUrl("post-audio", post.audio_path)}
+          duration={post.audio_duration}
+          peaks={post.audio_peaks}
+        />
+      )}
       <MediaGrid paths={post.media_paths} />
 
       <footer className="flex items-center justify-between">

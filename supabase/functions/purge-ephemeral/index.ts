@@ -1,10 +1,9 @@
 // Edge Function: pulizia oraria dei contenuti effimeri di Flux.
-// Deploy con:  npx supabase functions deploy purge-ephemeral --no-verify-jwt
+// Deploy con:  npx supabase functions deploy purge-ephemeral --no-verify-jwt --use-api
 // (l'autenticazione è gestita qui sotto con CRON_SECRET)
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const BUCKET = "post-media";
 const PAGE = 1000;
 const CHUNK = 100;
 
@@ -29,34 +28,41 @@ Deno.serve(async (req) => {
   // Un unico istante di riferimento per tutta l'operazione
   const cutoff = new Date().toISOString();
 
-  // 1. Raccogli i percorsi dei file dei post scaduti (paginato)
-  const paths: string[] = [];
+  // 1. Raccogli i file dei post scaduti: foto (post-media) e audio (post-audio)
+  const photoPaths: string[] = [];
+  const audioPaths: string[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("posts")
-      .select("id, media_paths")
+      .select("id, media_paths, audio_path")
       .lt("expires_at", cutoff)
       .order("id")
       .range(from, from + PAGE - 1);
 
     if (error) return json({ error: error.message }, 500);
     if (!data || data.length === 0) break;
-    for (const post of data) paths.push(...(post.media_paths as string[]));
+    for (const post of data) {
+      photoPaths.push(...((post.media_paths as string[] | null) ?? []));
+      if (post.audio_path) audioPaths.push(post.audio_path as string);
+    }
     if (data.length < PAGE) break;
   }
 
   // 2. Elimina i file dallo Storage. Se fallisce ci fermiamo SENZA toccare il DB:
   //    al prossimo giro (tra un'ora) riproverà con gli stessi post.
   let filesRemoved = 0;
-  for (let i = 0; i < paths.length; i += CHUNK) {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .remove(paths.slice(i, i + CHUNK));
-    if (error) return json({ error: `storage: ${error.message}` }, 500);
-    filesRemoved += data?.length ?? 0;
+  for (const [bucket, paths] of [
+    ["post-media", photoPaths],
+    ["post-audio", audioPaths],
+  ] as const) {
+    for (let i = 0; i < paths.length; i += CHUNK) {
+      const { data, error } = await supabase.storage.from(bucket).remove(paths.slice(i, i + CHUNK));
+      if (error) return json({ error: `storage (${bucket}): ${error.message}` }, 500);
+      filesRemoved += data?.length ?? 0;
+    }
   }
 
-  // 3. Elimina post, commenti e messaggi scaduti
+  // 3. Elimina post, commenti, messaggi e chat temporanee scadute
   const { error: rpcError } = await supabase.rpc("purge_ephemeral", {
     only_expired: true,
     cutoff,

@@ -1,4 +1,4 @@
-export type Bucket = "avatars" | "banners" | "post-media";
+export type Bucket = "avatars" | "banners" | "post-media" | "post-audio";
 
 const base = () => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 

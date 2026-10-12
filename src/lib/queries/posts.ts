@@ -6,7 +6,7 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 
 export const PAGE_SIZE = 20;
 
-export const POST_SELECT = `id, content, media_paths, created_at, expires_at, author:profiles!posts_author_id_fkey(${AUTHOR_FIELDS}), comments(count)`;
+export const POST_SELECT = `id, content, media_paths, created_at, expires_at, audio_path, audio_duration, audio_peaks, author:profiles!posts_author_id_fkey(${AUTHOR_FIELDS}), comments(count)`;
 
 /**
  * Feed dei post vivi (non scaduti), dal più recente.

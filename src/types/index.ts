@@ -23,6 +23,9 @@ export type PostWithAuthor = {
   media_paths: string[];
   created_at: string;
   expires_at: string;
+  audio_path: string | null;
+  audio_duration: number | null;
+  audio_peaks: number[] | null;
   author: AuthorLite;
   comments: { count: number }[];
 };
