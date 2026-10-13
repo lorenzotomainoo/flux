@@ -43,6 +43,10 @@ export type Message = {
   sender_id: string;
   content: string;
   created_at: string;
+  media_paths: string[];
+  audio_path: string | null;
+  audio_duration: number | null;
+  audio_peaks: number[] | null;
 };
 
 export type ConversationKind = "direct" | "group";

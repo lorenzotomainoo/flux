@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Ghost, Send } from "lucide-react";
+import { ArrowLeft, Ghost } from "lucide-react";
 import { UserAvatar } from "@/components/ui/Avatar";
 import GhostBackdrop from "./GhostBackdrop";
 import GroupAvatar from "./GroupAvatar";
+import ChatComposer from "./ChatComposer";
 import MessageBubble from "./MessageBubble";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
+import { signChatFiles } from "@/lib/chatFiles";
 import { createClient } from "@/lib/supabase/client";
 import { cn, timeLeft } from "@/lib/utils";
 import type { ChatInfo, ChatMember, Message } from "@/types";
@@ -18,19 +20,18 @@ type Props = {
   currentUserId: string;
   members: ChatMember[];
   initialMessages: Message[];
+  /** link temporanei dei file già presenti: percorso → indirizzo */
+  signedUrls: Record<string, string>;
 };
 
-const MAX_LENGTH = 2000;
 
-export default function ChatWindow({ chat, currentUserId, members, initialMessages }: Props) {
+export default function ChatWindow({ chat, currentUserId, members, initialMessages, signedUrls }: Props) {
   const router = useRouter();
   const isGroup = chat.kind === "group";
   const temporary = chat.expires_at !== null;
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [urls, setUrls] = useState<Record<string, string>>(signedUrls);
   const [showMembers, setShowMembers] = useState(false);
   const [reads, setReads] = useState<Record<string, string>>(() =>
     Object.fromEntries(members.map((m) => [m.id, m.last_read_at]))
@@ -82,28 +83,29 @@ export default function ChatWindow({ chat, currentUserId, members, initialMessag
     firstScroll.current = false;
   }, [messages.length]);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const content = text.trim();
-    if (!content || sending || expired) return;
-
-    setSending(true);
-    setError(null);
-    const { data, error } = await createClient()
-      .from("messages")
-      .insert({ conversation_id: chat.id, sender_id: currentUserId, content })
-      .select("id, conversation_id, sender_id, content, created_at")
-      .single();
-    setSending(false);
-
-    if (error || !data) {
-      setError("Messaggio non inviato. Riprova.");
-      return;
-    }
-    setText("");
+  function onSent(message: Message) {
     // l'evento realtime porterà lo stesso messaggio: il controllo sull'id evita i doppioni
-    setMessages((prev) => (prev.some((x) => x.id === data.id) ? prev : [...prev, data as Message]));
+    setMessages((prev) => (prev.some((x) => x.id === message.id) ? prev : [...prev, message]));
   }
+
+  // Link temporanei per gli allegati dei messaggi nuovi (arrivati in tempo reale o inviati da me).
+  // Ogni percorso si prova una volta sola: se fallisce non si ripete all'infinito.
+  const attempted = useRef(new Set<string>(Object.keys(signedUrls)));
+  useEffect(() => {
+    const todo = messages.filter(
+      (m) =>
+        m.media_paths.some((p) => !attempted.current.has(p)) ||
+        (m.audio_path !== null && !attempted.current.has(m.audio_path))
+    );
+    if (todo.length === 0) return;
+    todo.forEach((m) => {
+      m.media_paths.forEach((p) => attempted.current.add(p));
+      if (m.audio_path) attempted.current.add(m.audio_path);
+    });
+    void signChatFiles(createClient(), todo).then((fresh) => {
+      if (Object.keys(fresh).length > 0) setUrls((prev) => ({ ...prev, ...fresh }));
+    });
+  }, [messages]);
 
   // "Visto" solo nelle chat 1-a-1
   const lastMine = [...messages].reverse().find((m) => m.sender_id === currentUserId);
@@ -206,6 +208,7 @@ export default function ChatWindow({ chat, currentUserId, members, initialMessag
                   message={m}
                   mine={mine}
                   seen={m.id === seenId}
+                  urls={urls}
                   senderName={showName ? (byId.get(m.sender_id)?.display_name || byId.get(m.sender_id)?.username || "Utente") : undefined}
                 />
               );
@@ -233,28 +236,12 @@ export default function ChatWindow({ chat, currentUserId, members, initialMessag
         )}
       </div>
 
-      <form onSubmit={send} className="space-y-1 border-t border-border p-3">
-        {error && <p className="text-xs text-red-500">{error}</p>}
-        <div className="flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={MAX_LENGTH}
-            disabled={expired}
-            placeholder="Scrivi un messaggio…"
-            autoComplete="off"
-            className="min-w-0 flex-1 rounded-xl border border-border bg-bg px-4 py-2.5 text-base outline-none transition focus:border-accent"
-          />
-          <button
-            type="submit"
-            disabled={sending || expired || !text.trim()}
-            aria-label="Invia"
-            className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-fg transition active:scale-95 disabled:opacity-50"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-      </form>
+      <ChatComposer
+        conversationId={chat.id}
+        currentUserId={currentUserId}
+        disabled={expired}
+        onSent={onSent}
+      />
     </div>
   );
 }

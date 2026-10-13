@@ -25,13 +25,18 @@ export async function removeImages(bucket: Bucket, paths: string[]): Promise<voi
   await createClient().storage.from(bucket).remove(paths);
 }
 
-/** Carica un audio in `post-audio/<userId>/<uuid>.<ext>` e restituisce il percorso. */
-export async function uploadAudio(userId: string, blob: Blob, mime: string): Promise<string> {
+/** Carica un audio in `<bucket>/<userId>/<uuid>.<ext>` (di default nei post) e restituisce il percorso. */
+export async function uploadAudio(
+  userId: string,
+  blob: Blob,
+  mime: string,
+  bucket: "post-audio" | "chat-audio" = "post-audio"
+): Promise<string> {
   // il bucket confronta il tipo senza parametri: "audio/webm;codecs=opus" -> "audio/webm"
   const type = baseMime(mime);
   const path = `${userId}/${crypto.randomUUID()}.${audioExtension(type)}`;
   const { error } = await createClient()
-    .storage.from("post-audio")
+    .storage.from(bucket)
     .upload(path, blob, { contentType: type, cacheControl: "31536000", upsert: false });
   if (error) throw new Error("Caricamento audio non riuscito. Riprova.");
   return path;

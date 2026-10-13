@@ -216,26 +216,38 @@ export type Database = {
       }
       messages: {
         Row: {
+          audio_duration: number | null
+          audio_path: string | null
+          audio_peaks: number[] | null
           content: string
           conversation_id: string
           created_at: string
           id: string
+          media_paths: string[]
           read_at: string | null
           sender_id: string
         }
         Insert: {
+          audio_duration?: number | null
+          audio_path?: string | null
+          audio_peaks?: number[] | null
           content: string
           conversation_id: string
           created_at?: string
           id?: string
+          media_paths?: string[]
           read_at?: string | null
           sender_id: string
         }
         Update: {
+          audio_duration?: number | null
+          audio_path?: string | null
+          audio_peaks?: number[] | null
           content?: string
           conversation_id?: string
           created_at?: string
           id?: string
+          media_paths?: string[]
           read_at?: string | null
           sender_id?: string
         }
@@ -395,6 +407,17 @@ export type Database = {
       is_member: { Args: { conv: string }; Returns: boolean }
       leave_conversation: { Args: { conv: string }; Returns: undefined }
       mark_read: { Args: { conv: string }; Returns: undefined }
+      orphan_chat_files: {
+        Args: { max_rows?: number }
+        Returns: {
+          bucket_id: string
+          name: string
+        }[]
+      }
+      paths_in_folder: {
+        Args: { folder: string; paths: string[] }
+        Returns: boolean
+      }
       purge_ephemeral: {
         Args: { cutoff?: string; only_expired?: boolean }
         Returns: undefined

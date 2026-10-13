@@ -69,5 +69,29 @@ Deno.serve(async (req) => {
   });
   if (rpcError) return json({ error: `db: ${rpcError.message}` }, 500);
 
-  return json({ ok: true, cutoff, filesRemoved });
+  // 4. File delle chat rimasti senza messaggio: messaggi scaduti, chat temporanee finite, gruppi eliminati.
+  //    (si ignorano quelli di meno di un'ora: potrebbero essere in fase di invio)
+  const ORPHAN_BATCH = 500;
+  let orphansRemoved = 0;
+  for (let round = 0; round < 5; round++) {
+    const { data: orphans, error: orphanError } = await supabase.rpc("orphan_chat_files", {
+      max_rows: ORPHAN_BATCH,
+    });
+    if (orphanError) return json({ error: `orphans: ${orphanError.message}` }, 500);
+
+    const rows = (orphans ?? []) as { bucket_id: string; name: string }[];
+    if (rows.length === 0) break;
+
+    for (const bucket of ["chat-media", "chat-audio"]) {
+      const names = rows.filter((r) => r.bucket_id === bucket).map((r) => r.name);
+      for (let i = 0; i < names.length; i += CHUNK) {
+        const { data, error } = await supabase.storage.from(bucket).remove(names.slice(i, i + CHUNK));
+        if (error) return json({ error: `storage (${bucket}): ${error.message}` }, 500);
+        orphansRemoved += data?.length ?? 0;
+      }
+    }
+    if (rows.length < ORPHAN_BATCH) break;
+  }
+
+  return json({ ok: true, cutoff, filesRemoved, orphansRemoved });
 });

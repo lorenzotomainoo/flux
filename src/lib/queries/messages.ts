@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
-import { AUTHOR_FIELDS } from "@/lib/fields";
+import { signChatFiles, messagePreview } from "@/lib/chatFiles";
+import { AUTHOR_FIELDS, MESSAGE_FIELDS } from "@/lib/fields";
 import type {
   AuthorLite,
   ChatInfo,
@@ -43,7 +44,7 @@ export async function getConversations(supabase: Client, userId: string): Promis
     supabase.from("conversation_members").select("conversation_id, user_id").in("conversation_id", ids),
     supabase
       .from("messages")
-      .select("conversation_id, sender_id, content, created_at")
+      .select("conversation_id, sender_id, content, created_at, media_paths, audio_path")
       .in("conversation_id", ids)
       .order("created_at", { ascending: false })
       .limit(300),
@@ -71,7 +72,11 @@ export async function getConversations(supabase: Client, userId: string): Promis
   const lastByConv = new Map<string, ConversationPreview["last_message"]>();
   for (const m of recent ?? []) {
     if (!lastByConv.has(m.conversation_id)) {
-      lastByConv.set(m.conversation_id, { content: m.content, sender_id: m.sender_id, created_at: m.created_at });
+      lastByConv.set(m.conversation_id, {
+        content: messagePreview(m),
+        sender_id: m.sender_id,
+        created_at: m.created_at,
+      });
     }
   }
   const unreadByConv = new Map(unreadRows.map((u) => [u.conversation_id, Number(u.unread)]));
@@ -144,7 +149,7 @@ export async function getChat(supabase: Client, conversationId: string, userId: 
     supabase.from("profiles").select(AUTHOR_FIELDS).in("id", rows.map((r) => r.user_id)),
     supabase
       .from("messages")
-      .select("id, conversation_id, sender_id, content, created_at")
+      .select(MESSAGE_FIELDS)
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: false })
       .limit(100),
@@ -163,5 +168,9 @@ export async function getChat(supabase: Client, conversationId: string, userId: 
     expires_at: conv.expires_at,
   };
 
-  return { info, members, messages: ((msgs ?? []) as Message[]).reverse() };
+  const messages = ((msgs ?? []) as unknown as Message[]).reverse();
+  // link temporanei per foto e audio (i file delle chat sono privati)
+  const signedUrls = await signChatFiles(supabase, messages);
+
+  return { info, members, messages, signedUrls };
 }

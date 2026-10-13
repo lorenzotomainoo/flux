@@ -25,6 +25,7 @@ export default async function ChatPage({ params }: Props) {
       currentUserId={user.id}
       members={chat.members}
       initialMessages={chat.messages}
+      signedUrls={chat.signedUrls}
     />
   );
 }
