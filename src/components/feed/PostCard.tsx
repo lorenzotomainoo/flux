@@ -10,9 +10,11 @@ import AudioPlayer from "./AudioPlayer";
 import MediaGrid from "./MediaGrid";
 import CommentList from "./CommentList";
 import CommentForm from "./CommentForm";
+import LikeButton from "@/components/ui/LikeButton";
 import { createClient } from "@/lib/supabase/client";
 import { deletePost } from "@/lib/actions/deletePost";
 import { AUTHOR_FIELDS } from "@/lib/fields";
+import { fetchLikedCommentIds, setLike } from "@/lib/likes";
 import { publicUrl } from "@/lib/storage";
 import { timeAgo } from "@/lib/utils";
 import type { CommentWithAuthor, PostWithAuthor } from "@/types";
@@ -37,10 +39,20 @@ export default function PostCard({ post, currentUserId }: Props) {
     if (next && comments === null) {
       const { data } = await createClient()
         .from("comments")
-        .select(`id, content, created_at, author:profiles!comments_author_id_fkey(${AUTHOR_FIELDS})`)
+        .select(`id, content, created_at, author:profiles!comments_author_id_fkey(${AUTHOR_FIELDS}), comment_likes(count)`)
         .eq("post_id", post.id)
         .order("created_at", { ascending: true });
-      setComments((data ?? []) as unknown as CommentWithAuthor[]);
+
+      type Row = Omit<CommentWithAuthor, "like_count" | "liked"> & { comment_likes: { count: number }[] };
+      const rows = (data ?? []) as unknown as Row[];
+      const liked = await fetchLikedCommentIds(currentUserId, rows.map((r) => r.id));
+      setComments(
+        rows.map(({ comment_likes, ...c }) => ({
+          ...c,
+          like_count: comment_likes?.[0]?.count ?? 0,
+          liked: liked.has(c.id),
+        }))
+      );
     }
   }
 
@@ -88,18 +100,31 @@ export default function PostCard({ post, currentUserId }: Props) {
           src={publicUrl("post-audio", post.audio_path)}
           duration={post.audio_duration}
           peaks={post.audio_peaks}
+          like={{
+            count: post.audio_like_count,
+            liked: post.audio_liked,
+            onChange: (liked) => setLike("audio", post.id, liked),
+          }}
         />
       )}
       <MediaGrid paths={post.media_paths} />
 
       <footer className="flex items-center justify-between">
-        <button
-          onClick={toggleComments}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-surface-2 hover:text-fg"
-        >
-          <MessageCircle size={16} />
-          {count > 0 ? count : "Commenta"}
-        </button>
+        <div className="flex items-center gap-1">
+          <LikeButton
+            initialCount={post.like_count}
+            initialLiked={post.liked}
+            onChange={(liked) => setLike("post", post.id, liked)}
+            label="al post"
+          />
+          <button
+            onClick={toggleComments}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-surface-2 hover:text-fg"
+          >
+            <MessageCircle size={16} />
+            {count > 0 ? count : "Commenta"}
+          </button>
+        </div>
         <ExpiryBadge expiresAt={post.expires_at} />
       </footer>
 

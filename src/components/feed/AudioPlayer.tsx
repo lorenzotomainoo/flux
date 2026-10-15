@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import LikeButton from "@/components/ui/LikeButton";
 import { formatClock } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +18,11 @@ type Props = {
   /** forma d'onda: valori 0-100 (null = barre uniformi) */
   peaks: number[] | null;
   preload?: "none" | "metadata" | "auto";
+  /** se presente, mostra il cuore per apprezzare l'audio (usato nei post) */
+  like?: { count: number; liked: boolean; onChange: (liked: boolean) => Promise<boolean> };
 };
 
-export default function AudioPlayer({ src, duration, peaks, preload = "none" }: Props) {
+export default function AudioPlayer({ src, duration, peaks, preload = "none", like }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -141,6 +144,17 @@ export default function AudioPlayer({ src, duration, peaks, preload = "none" }: 
       <span className="w-11 shrink-0 text-right text-xs tabular-nums text-muted">
         {formatClock(playing || time > 0 ? time : duration)}
       </span>
+
+      {like && (
+        <LikeButton
+          initialCount={like.count}
+          initialLiked={like.liked}
+          onChange={like.onChange}
+          label="all'audio"
+          size={16}
+          className="-mr-1 shrink-0 px-1.5"
+        />
+      )}
     </div>
   );
 }

@@ -41,7 +41,7 @@ export default async function ProfilePage({ params }: Props) {
           .eq("follower_id", user.id)
           .eq("following_id", profile.id)
           .maybeSingle(),
-    getUserPosts(supabase, profile.id),
+    getUserPosts(supabase, profile.id, user.id),
   ]);
 
   // La pagina si tinge del colore accento di chi la possiede

@@ -28,6 +28,12 @@ export type PostWithAuthor = {
   audio_peaks: number[] | null;
   author: AuthorLite;
   comments: { count: number }[];
+  /** "mi piace" al post e il mio */
+  like_count: number;
+  liked: boolean;
+  /** "mi piace" all'audio del post (separati da quelli al post) e il mio */
+  audio_like_count: number;
+  audio_liked: boolean;
 };
 
 export type CommentWithAuthor = {
@@ -35,6 +41,8 @@ export type CommentWithAuthor = {
   content: string;
   created_at: string;
   author: AuthorLite;
+  like_count: number;
+  liked: boolean;
 };
 
 export type Message = {

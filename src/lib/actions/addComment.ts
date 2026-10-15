@@ -26,5 +26,6 @@ export async function addComment(
     .single();
 
   if (error || !data) return { error: "Il post potrebbe essere scaduto. Riprova." };
-  return { comment: data as unknown as CommentWithAuthor };
+  const comment = data as unknown as Omit<CommentWithAuthor, "like_count" | "liked">;
+  return { comment: { ...comment, like_count: 0, liked: false } };
 }
