@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Palette } from "lucide-react";
+import { Lock, Palette } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import EditProfileForm from "@/components/profile/EditProfileForm";
 import UsernameForm from "@/components/profile/UsernameForm";
@@ -16,14 +16,41 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, username_changed_at, display_name, bio, avatar_url, banner_url, avatar_x, avatar_y, banner_x, banner_y")
+    .select("username, username_changed_at, is_private, display_name, bio, avatar_url, banner_url, avatar_x, avatar_y, banner_x, banner_y")
     .eq("id", user.id)
     .single();
   if (!profile) throw new Error("Profilo non trovato");
 
+  const { count: pendingRequests } = await supabase
+    .from("follow_requests")
+    .select("*", { count: "exact", head: true })
+    .eq("target_id", user.id);
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Modifica profilo</h1>
+      <Link
+        href="/settings/privacy"
+        className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition hover:bg-surface-2"
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
+          <Lock size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Privacy e richieste</span>
+          <span className="block text-sm text-muted">
+            {profile.is_private ? "Account privato" : "Account pubblico"}
+            {pendingRequests ? ` · ${pendingRequests} richieste in attesa` : ""}
+          </span>
+        </span>
+        {pendingRequests ? (
+          <span className="grid h-6 min-w-6 place-items-center rounded-full bg-accent px-2 text-xs font-bold text-accent-fg">
+            {pendingRequests}
+          </span>
+        ) : (
+          <span className="text-muted">›</span>
+        )}
+      </Link>
       <Link
         href="/settings/appearance"
         className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 transition hover:bg-surface-2"

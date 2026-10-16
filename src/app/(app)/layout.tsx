@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile, error }, unread] = await Promise.all([
+  const [{ data: profile, error }, unread, pendingRequests] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -22,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .eq("id", user.id)
       .single(),
     getUnreadCount(supabase),
+    supabase.from("follow_requests").select("*", { count: "exact", head: true }).eq("target_id", user.id),
   ]);
 
   // Non fare redirect a /login qui: il middleware ti rimanderebbe a /home (loop).
@@ -37,6 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         avatarX={profile.avatar_x}
         avatarY={profile.avatar_y}
         unread={unread}
+        requests={pendingRequests.count ?? 0}
       >
         {children}
       </AppShell>

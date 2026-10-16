@@ -6,7 +6,10 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 
 export const PAGE_SIZE = 20;
 
-export const POST_SELECT = `id, content, media_paths, created_at, expires_at, audio_path, audio_duration, audio_peaks, author:profiles!posts_author_id_fkey(${AUTHOR_FIELDS}), comments(count), post_likes(count), audio_likes(count)`;
+const postSelect = (innerAuthor: boolean) =>
+  `id, content, media_paths, created_at, expires_at, audio_path, audio_duration, audio_peaks, author:profiles!posts_author_id_fkey${innerAuthor ? "!inner" : ""}(${AUTHOR_FIELDS}), comments(count), post_likes(count), audio_likes(count)`;
+
+export const POST_SELECT = postSelect(false);
 
 type RawPost = Omit<PostWithAuthor, "like_count" | "liked" | "audio_like_count" | "audio_liked"> & {
   post_likes: { count: number }[];
@@ -37,12 +40,13 @@ async function withLikes(supabase: Client, viewerId: string, raw: RawPost[]): Pr
 /**
  * Feed dei post vivi (non scaduti), dal più recente.
  * - "seguiti": i tuoi post e quelli di chi segui
- * - "mondiale": i post di tutti
+ * - "mondiale": i post di tutti gli account pubblici
  */
 export async function getFeed(supabase: Client, userId: string, scope: FeedScope, before?: string) {
+  // Mondiale: join interna con l'autore, per poter escludere gli account privati
   let query = supabase
     .from("posts")
-    .select(POST_SELECT)
+    .select(postSelect(scope === "mondiale"))
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
@@ -53,6 +57,10 @@ export async function getFeed(supabase: Client, userId: string, scope: FeedScope
       .select("following_id")
       .eq("follower_id", userId);
     query = query.in("author_id", [userId, ...(follows ?? []).map((f) => f.following_id)]);
+  }
+  if (scope === "mondiale") {
+    // gli account privati non compaiono nel feed Mondiale, nemmeno ai loro follower (li vedono in "Seguiti")
+    query = query.eq("author.is_private", false);
   }
   if (before) query = query.lt("created_at", before);
 

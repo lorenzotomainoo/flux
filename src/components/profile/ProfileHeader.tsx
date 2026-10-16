@@ -1,8 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import FollowButton from "./FollowButton";
 import MessageButton from "./MessageButton";
+import type { FollowStatus } from "@/types";
 
 type Props = {
   profile: {
@@ -16,14 +18,15 @@ type Props = {
     avatar_y: number;
     banner_x: number;
     banner_y: number;
+    is_private: boolean;
   };
   isMe: boolean;
-  isFollowing: boolean;
+  followStatus: FollowStatus;
   followers: number;
   following: number;
 };
 
-export default function ProfileHeader({ profile, isMe, isFollowing, followers, following }: Props) {
+export default function ProfileHeader({ profile, isMe, followStatus, followers, following }: Props) {
   const name = profile.display_name || profile.username;
 
   return (
@@ -63,14 +66,18 @@ export default function ProfileHeader({ profile, isMe, isFollowing, followers, f
               <FollowButton
                 targetId={profile.id}
                 targetUsername={profile.username}
-                initialFollowing={isFollowing}
+                targetIsPrivate={profile.is_private}
+                initialStatus={followStatus}
               />
             </div>
           )}
         </div>
 
         <div className="mt-3">
-          <h1 className="text-xl font-extrabold">{name}</h1>
+          <h1 className="flex items-center gap-1.5 text-xl font-extrabold">
+            {name}
+            {profile.is_private && <Lock size={16} className="shrink-0 text-muted" aria-label="Account privato" />}
+          </h1>
           <p className="text-muted">@{profile.username}</p>
         </div>
 

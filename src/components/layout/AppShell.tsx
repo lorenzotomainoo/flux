@@ -17,10 +17,12 @@ type Props = {
   avatarX?: number;
   avatarY?: number;
   unread: number;
+  /** richieste di follow in attesa di risposta (account privato) */
+  requests: number;
   children: React.ReactNode;
 };
 
-export default function AppShell({ userId, username, displayName, avatarUrl, avatarX, avatarY, unread, children }: Props) {
+export default function AppShell({ userId, username, displayName, avatarUrl, avatarX, avatarY, unread, requests, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -81,12 +83,15 @@ export default function AppShell({ userId, username, displayName, avatarUrl, ava
     </span>
   );
 
-  const badge = (href: string) =>
-    href === "/messages" && unread > 0 ? (
+  const countFor = (href: string) => (href === "/messages" ? unread : href === "/settings" ? requests : 0);
+  const badge = (href: string) => {
+    const n = countFor(href);
+    return n > 0 ? (
       <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-accent-fg">
-        {unread > 9 ? "9+" : unread}
+        {n > 9 ? "9+" : n}
       </span>
     ) : null;
+  };
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl">
@@ -139,8 +144,17 @@ export default function AppShell({ userId, username, displayName, avatarUrl, ava
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-bg/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:hidden">
           {Logo}
           <div className="flex items-center">
-            <Link href="/settings" aria-label="Impostazioni" className="p-2 text-muted">
+            <Link
+              href="/settings"
+              aria-label={requests > 0 ? `Impostazioni (${requests} richieste di follow)` : "Impostazioni"}
+              className="relative p-2 text-muted"
+            >
               <Settings size={20} />
+              {requests > 0 && (
+                <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-fg">
+                  {requests > 9 ? "9+" : requests}
+                </span>
+              )}
             </Link>
             <button onClick={signOut} aria-label="Esci" className="p-2 text-muted">
               <LogOut size={20} />

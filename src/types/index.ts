@@ -7,6 +7,9 @@ export type Theme = "light" | "dark";
 /** Quale feed mostrare: solo chi segui (e te stesso) oppure i post di tutti. */
 export type FeedScope = "seguiti" | "mondiale";
 
+/** Il mio rapporto con un profilo: niente, richiesta inviata (account privato) oppure lo seguo. */
+export type FollowStatus = "none" | "requested" | "following";
+
 export type AuthorLite = {
   id: string;
   username: string;
