@@ -247,6 +247,39 @@ export type Database = {
           },
         ]
       }
+      follow_requests: {
+        Row: {
+          created_at: string
+          requester_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          requester_id?: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          requester_id?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -424,6 +457,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_private: boolean
           theme: string
           ui_background: string
           ui_font: string
@@ -446,6 +480,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id: string
+          is_private?: boolean
           theme?: string
           ui_background?: string
           ui_font?: string
@@ -468,6 +503,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_private?: boolean
           theme?: string
           ui_background?: string
           ui_font?: string
@@ -489,6 +525,7 @@ export type Database = {
         Args: { conv: string; created: string }
         Returns: boolean
       }
+      can_view_profile: { Args: { target: string }; Returns: boolean }
       change_username: { Args: { new_username: string }; Returns: string }
       create_group: {
         Args: {
@@ -499,11 +536,19 @@ export type Database = {
         Returns: string
       }
       delete_group_for_all: { Args: { conv: string }; Returns: undefined }
+      follow_counts: {
+        Args: { uid: string }
+        Returns: {
+          followers: number
+          following: number
+        }[]
+      }
       get_or_create_conversation: {
         Args: { other_user: string }
         Returns: string
       }
       is_member: { Args: { conv: string }; Returns: boolean }
+      is_private_account: { Args: { uid: string }; Returns: boolean }
       leave_conversation: { Args: { conv: string }; Returns: undefined }
       mark_read: { Args: { conv: string }; Returns: undefined }
       orphan_chat_files: {
@@ -519,6 +564,10 @@ export type Database = {
       }
       purge_ephemeral: {
         Args: { cutoff?: string; only_expired?: boolean }
+        Returns: undefined
+      }
+      respond_follow_request: {
+        Args: { accept: boolean; requester: string }
         Returns: undefined
       }
       unread_counts: {
